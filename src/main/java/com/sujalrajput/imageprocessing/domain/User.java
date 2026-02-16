@@ -1,4 +1,4 @@
-package com.sujalrajput.imageprocessing.model;
+package com.sujalrajput.imageprocessing.domain;
 
 import jakarta.persistence.*;
 import lombok.*;

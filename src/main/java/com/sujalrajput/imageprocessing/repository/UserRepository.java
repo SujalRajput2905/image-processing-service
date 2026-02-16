@@ -1,6 +1,6 @@
 package com.sujalrajput.imageprocessing.repository;
 
-import com.sujalrajput.imageprocessing.model.User;
+import com.sujalrajput.imageprocessing.domain.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
