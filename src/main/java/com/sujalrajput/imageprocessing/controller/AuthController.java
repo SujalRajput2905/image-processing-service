@@ -1,6 +1,8 @@
 package com.sujalrajput.imageprocessing.controller;
 
 import com.sujalrajput.imageprocessing.domain.User;
+import com.sujalrajput.imageprocessing.dto.LoginRequest;
+import com.sujalrajput.imageprocessing.dto.LoginResponse;
 import com.sujalrajput.imageprocessing.dto.RegisterRequest;
 import com.sujalrajput.imageprocessing.dto.RegisterResponse;
 import com.sujalrajput.imageprocessing.repository.UserRepository;
@@ -30,6 +32,15 @@ public class AuthController {
         );
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
+        User user = userService.login(loginRequest);
+
+        LoginResponse response = new LoginResponse(user.getUsername());
+
+        return ResponseEntity.ok(response);
     }
 }
 

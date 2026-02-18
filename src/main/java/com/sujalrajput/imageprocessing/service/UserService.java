@@ -1,8 +1,10 @@
 package com.sujalrajput.imageprocessing.service;
 
-import com.sujalrajput.imageprocessing.config.PasswordConfig;
 import com.sujalrajput.imageprocessing.domain.User;
+import com.sujalrajput.imageprocessing.dto.LoginRequest;
 import com.sujalrajput.imageprocessing.dto.RegisterRequest;
+import com.sujalrajput.imageprocessing.exception.AuthenticationException;
+import com.sujalrajput.imageprocessing.exception.UserAlreadyExistsException;
 import com.sujalrajput.imageprocessing.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,7 +27,7 @@ public class UserService {
                 .findByUsername(registerRequest.getUsername());
 
         if(existingUser.isPresent()) {
-            throw new RuntimeException("username not found");
+            throw new UserAlreadyExistsException("Username already exists");
         }
 
         String encodedPassword = passwordEncoder
@@ -36,5 +38,25 @@ public class UserService {
         user.setPassword(encodedPassword);
 
         return userRepository.save(user);
+    }
+
+    public User login(LoginRequest loginRequest) {
+        Optional<User> currUser = userRepository
+                .findByUsername(loginRequest.getUsername());
+
+        if(currUser.isEmpty()) {
+            throw new AuthenticationException("Invalid username or password");
+        }
+
+        User user = currUser.get();
+        boolean matches = passwordEncoder.matches(
+                loginRequest.getPassword(), user.getPassword()
+        );
+
+        if(!matches) {
+            throw new AuthenticationException("Invalid username or password");
+        }
+
+        return user;
     }
 }
