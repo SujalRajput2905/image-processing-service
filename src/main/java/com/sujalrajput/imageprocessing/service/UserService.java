@@ -1,5 +1,6 @@
 package com.sujalrajput.imageprocessing.service;
 
+import com.sujalrajput.imageprocessing.config.security.JwtUtil;
 import com.sujalrajput.imageprocessing.domain.User;
 import com.sujalrajput.imageprocessing.dto.LoginRequest;
 import com.sujalrajput.imageprocessing.dto.RegisterRequest;
@@ -21,6 +22,9 @@ public class UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
     public User register(RegisterRequest registerRequest) {
 
         Optional<User> existingUser = userRepository
@@ -40,7 +44,7 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public User login(LoginRequest loginRequest) {
+    public String login(LoginRequest loginRequest) {
         Optional<User> currUser = userRepository
                 .findByUsername(loginRequest.getUsername());
 
@@ -57,6 +61,6 @@ public class UserService {
             throw new AuthenticationException("Invalid username or password");
         }
 
-        return user;
+        return jwtUtil.generateToken(user.getUsername());
     }
 }
