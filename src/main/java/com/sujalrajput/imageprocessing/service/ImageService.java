@@ -4,6 +4,7 @@ import com.sujalrajput.imageprocessing.domain.Image;
 import com.sujalrajput.imageprocessing.domain.User;
 import com.sujalrajput.imageprocessing.exception.FileUploadException;
 import com.sujalrajput.imageprocessing.repository.ImageRepository;
+import org.apache.catalina.LifecycleState;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -12,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -59,5 +61,9 @@ public class ImageService {
         image.setUser(user);
 
         return imageRepository.save(image);
+    }
+
+    public List<Image> getUserImages(User user) {
+        return imageRepository.findAllByUser(user);
     }
 }

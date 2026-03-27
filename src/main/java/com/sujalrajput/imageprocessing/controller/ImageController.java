@@ -12,6 +12,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/images")
 public class ImageController {
@@ -44,6 +46,33 @@ public class ImageController {
                 image.getFileType(),
                 image.getCreatedAt()
         );
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/my")
+    public ResponseEntity<List<ImageReponse>> getMyImages() {
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
+        String username = authentication.getName();
+
+        User user = userRepository
+                .findByUsername(username)
+                .orElseThrow(()-> new RuntimeException("User not found"));
+
+        List<Image> images = imageService.getUserImages(user);
+
+        List<ImageReponse> response = images.stream()
+                .map(image -> new ImageReponse(
+                        image.getId(),
+                        image.getFileName(),
+                        image.getOriginalFileName(),
+                        image.getFileSize(),
+                        image.getFileType(),
+                        image.getCreatedAt()
+                ))
+                .toList();
 
         return ResponseEntity.ok(response);
     }
