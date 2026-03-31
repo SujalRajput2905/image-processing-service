@@ -2,7 +2,7 @@ package com.sujalrajput.imageprocessing.controller;
 
 import com.sujalrajput.imageprocessing.domain.Image;
 import com.sujalrajput.imageprocessing.domain.User;
-import com.sujalrajput.imageprocessing.dto.ImageReponse;
+import com.sujalrajput.imageprocessing.dto.ImageResponse;
 import com.sujalrajput.imageprocessing.repository.UserRepository;
 import com.sujalrajput.imageprocessing.service.ImageService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,7 +40,7 @@ public class ImageController {
 
         Image image = imageService.uploadImage(file, user);
 
-        ImageReponse response = new ImageReponse(
+        ImageResponse response = new ImageResponse(
                 image.getId(),
                 image.getFileName(),
                 image.getOriginalFileName(),
@@ -52,7 +52,7 @@ public class ImageController {
     }
 
     @GetMapping("/my")
-    public ResponseEntity<List<ImageReponse>> getMyImages() {
+    public ResponseEntity<List<ImageResponse>> getMyImages() {
         Authentication authentication = SecurityContextHolder
                 .getContext()
                 .getAuthentication();
@@ -65,8 +65,8 @@ public class ImageController {
 
         List<Image> images = imageService.getUserImages(user);
 
-        List<ImageReponse> response = images.stream()
-                .map(image -> new ImageReponse(
+        List<ImageResponse> response = images.stream()
+                .map(image -> new ImageResponse(
                         image.getId(),
                         image.getFileName(),
                         image.getOriginalFileName(),
@@ -81,7 +81,8 @@ public class ImageController {
 
     @GetMapping("/file/{fileName}")
     public ResponseEntity<Resource> getImage(@PathVariable String fileName) {
-        Resource resource = imageService.getImageFile(fileName);
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Resource resource = imageService.getImageFile(fileName, auth.getName());
 
         MediaType mediaType;
         if(fileName.endsWith(".png")) {
@@ -96,5 +97,15 @@ public class ImageController {
                 .ok()
                 .contentType(mediaType)
                 .body(resource);
+    }
+
+    @DeleteMapping("/file/{fileName}")
+    public ResponseEntity<?> deleteImage(@PathVariable String fileName) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        imageService.deleteImage(fileName, auth.getName());
+
+        return ResponseEntity
+                .noContent()
+                .build();
     }
 }

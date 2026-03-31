@@ -8,7 +8,7 @@ import java.time.Instant;
 
 @Getter
 @AllArgsConstructor
-public class ImageReponse {
+public class ImageResponse {
     private Long id;
     private String fileName;
     private String originalFileName;

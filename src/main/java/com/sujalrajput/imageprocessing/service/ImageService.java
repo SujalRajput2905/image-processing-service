@@ -5,7 +5,7 @@ import com.sujalrajput.imageprocessing.domain.User;
 import com.sujalrajput.imageprocessing.exception.FileUploadException;
 import com.sujalrajput.imageprocessing.exception.ImageNotFoundException;
 import com.sujalrajput.imageprocessing.repository.ImageRepository;
-import org.apache.catalina.LifecycleState;
+import com.sujalrajput.imageprocessing.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -24,6 +24,9 @@ import java.util.UUID;
 public class ImageService {
     @Autowired
     private ImageRepository imageRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     public Image uploadImage(MultipartFile file, User user) {
         if(file.isEmpty()) {
@@ -71,9 +74,12 @@ public class ImageService {
         return imageRepository.findAllByUser(user);
     }
 
-    public Resource getImageFile(String fileName) {
-        Image image = imageRepository.findByFileName(fileName)
-                .orElseThrow(() -> new ImageNotFoundException("Image not Found"));
+    public Resource getImageFile(String fileName, String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ImageNotFoundException("User not found"));
+
+        Image image = imageRepository.findByFileNameAndUser(fileName, user)
+                .orElseThrow(() -> new ImageNotFoundException("Image not found"));
 
         String filePath = image.getFilePath();
         Path path = Paths.get(filePath);
@@ -89,5 +95,24 @@ public class ImageService {
             throw new ImageNotFoundException("Image not Found");
         }
         return resource;
+    }
+
+    public void deleteImage(String fileName, String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ImageNotFoundException("User not found"));
+
+        Image image = imageRepository.findByFileNameAndUser(fileName, user)
+                .orElseThrow(() -> new ImageNotFoundException("Image not found"));
+
+
+        String filePath = image.getFilePath();
+        Path path = Paths.get(filePath);
+
+        try {
+            Files.deleteIfExists(path);
+        } catch (IOException e) {
+            throw new FileUploadException("Failed to delete the file from the disk");
+        }
+        imageRepository.delete(image);
     }
 }
