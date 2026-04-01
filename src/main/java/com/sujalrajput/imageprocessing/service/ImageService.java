@@ -2,6 +2,8 @@ package com.sujalrajput.imageprocessing.service;
 
 import com.sujalrajput.imageprocessing.domain.Image;
 import com.sujalrajput.imageprocessing.domain.User;
+import com.sujalrajput.imageprocessing.dto.ImageResponse;
+import com.sujalrajput.imageprocessing.dto.PagedImageResponse;
 import com.sujalrajput.imageprocessing.exception.FileUploadException;
 import com.sujalrajput.imageprocessing.exception.ImageNotFoundException;
 import com.sujalrajput.imageprocessing.repository.ImageRepository;
@@ -9,6 +11,9 @@ import com.sujalrajput.imageprocessing.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
@@ -70,8 +75,33 @@ public class ImageService {
         return imageRepository.save(image);
     }
 
-    public List<Image> getUserImages(User user) {
-        return imageRepository.findAllByUser(user);
+    public PagedImageResponse getUserImages(String username, int page, int size) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ImageNotFoundException("User not found"));
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Image> imagePage = imageRepository.findAllByUser(user, pageable);
+
+        List<ImageResponse> images = imagePage.getContent()
+                .stream()
+                .map(image -> new ImageResponse(
+                        image.getId(),
+                        image.getFileName(),
+                        image.getOriginalFileName(),
+                        image.getFileSize(),
+                        image.getFileType(),
+                        image.getCreatedAt()
+                ))
+                .toList();
+
+        return new PagedImageResponse(
+                images,
+                imagePage.getNumber(),
+                imagePage.getTotalPages(),
+                imagePage.getTotalElements(),
+                imagePage.hasNext(),
+                imagePage.hasPrevious()
+        );
     }
 
     public Resource getImageFile(String fileName, String username) {

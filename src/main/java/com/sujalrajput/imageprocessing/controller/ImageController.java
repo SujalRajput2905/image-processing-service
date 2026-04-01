@@ -3,6 +3,7 @@ package com.sujalrajput.imageprocessing.controller;
 import com.sujalrajput.imageprocessing.domain.Image;
 import com.sujalrajput.imageprocessing.domain.User;
 import com.sujalrajput.imageprocessing.dto.ImageResponse;
+import com.sujalrajput.imageprocessing.dto.PagedImageResponse;
 import com.sujalrajput.imageprocessing.repository.UserRepository;
 import com.sujalrajput.imageprocessing.service.ImageService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,8 +14,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/images")
@@ -52,30 +51,12 @@ public class ImageController {
     }
 
     @GetMapping("/my")
-    public ResponseEntity<List<ImageResponse>> getMyImages() {
-        Authentication authentication = SecurityContextHolder
-                .getContext()
-                .getAuthentication();
+    public ResponseEntity<PagedImageResponse> getMyImages(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
 
-        String username = authentication.getName();
-
-        User user = userRepository
-                .findByUsername(username)
-                .orElseThrow(()-> new RuntimeException("User not found"));
-
-        List<Image> images = imageService.getUserImages(user);
-
-        List<ImageResponse> response = images.stream()
-                .map(image -> new ImageResponse(
-                        image.getId(),
-                        image.getFileName(),
-                        image.getOriginalFileName(),
-                        image.getFileSize(),
-                        image.getFileType(),
-                        image.getCreatedAt()
-                ))
-                .toList();
-
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        PagedImageResponse response = imageService.getUserImages(auth.getName(), page, size);
         return ResponseEntity.ok(response);
     }
 
