@@ -8,6 +8,7 @@ import com.sujalrajput.imageprocessing.exception.FileUploadException;
 import com.sujalrajput.imageprocessing.exception.ImageNotFoundException;
 import com.sujalrajput.imageprocessing.repository.ImageRepository;
 import com.sujalrajput.imageprocessing.repository.UserRepository;
+import jakarta.persistence.SecondaryTable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -23,6 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -33,9 +35,19 @@ public class ImageService {
     @Autowired
     private UserRepository userRepository;
 
+    private static final Set<String> ALLOWED_EXTENSIONS = Set.of(
+            "jpg", "jpeg", "png", "gif", "webp"
+    );
+
+    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;
+
     public Image uploadImage(MultipartFile file, User user) {
         if(file.isEmpty()) {
             throw new FileUploadException("Uploaded file is empty");
+        }
+
+        if(file.getSize() > MAX_FILE_SIZE) {
+            throw new FileUploadException("File size exceeds 10MB limit");
         }
 
         String originalFileName = file.getOriginalFilename();
@@ -48,6 +60,10 @@ public class ImageService {
             throw new FileUploadException("File has no extension");
         }
         String extension = originalFileName.substring(dotIndex + 1);
+
+        if(!ALLOWED_EXTENSIONS.contains(extension.toLowerCase())) {
+            throw new FileUploadException("Invalid File Format");
+        }
         String uniqueFileName = UUID.randomUUID() + "." + extension;
 
         Path uploadPath = Paths.get("uploads");
@@ -76,6 +92,8 @@ public class ImageService {
     }
 
     public PagedImageResponse getUserImages(String username, int page, int size) {
+        if (page < 0) page = 0;
+        if (size <= 0 || size > 50) size = 10;
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ImageNotFoundException("User not found"));
 
