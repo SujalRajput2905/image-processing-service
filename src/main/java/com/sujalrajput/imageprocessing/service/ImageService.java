@@ -8,6 +8,7 @@ import com.sujalrajput.imageprocessing.exception.FileUploadException;
 import com.sujalrajput.imageprocessing.exception.ImageNotFoundException;
 import com.sujalrajput.imageprocessing.repository.ImageRepository;
 import com.sujalrajput.imageprocessing.repository.UserRepository;
+import com.sujalrajput.imageprocessing.service.storage.StorageService;
 import jakarta.persistence.SecondaryTable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
@@ -34,6 +35,9 @@ public class ImageService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private StorageService storageService;
 
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of(
             "jpg", "jpeg", "png", "gif", "webp"
@@ -66,25 +70,13 @@ public class ImageService {
         }
         String uniqueFileName = UUID.randomUUID() + "." + extension;
 
-        Path uploadPath = Paths.get("uploads");
-        try {
-            Files.createDirectories(uploadPath);
-        } catch (IOException e) {
-            throw new FileUploadException("Failed to create Directory");
-        }
-
-        Path filePath = uploadPath.resolve(uniqueFileName);
-        try {
-            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
-            throw new FileUploadException("Failed to store file");
-        }
+        String storedPath = storageService.save(file, uniqueFileName);
 
         Image image = new Image();
         image.setFileName(uniqueFileName);
         image.setOriginalFileName(originalFileName);
         image.setFileType(extension);
-        image.setFilePath(filePath.toString());
+        image.setFilePath(storedPath);
         image.setFileSize(file.getSize());
         image.setUser(user);
 
@@ -130,18 +122,7 @@ public class ImageService {
                 .orElseThrow(() -> new ImageNotFoundException("Image not found"));
 
         String filePath = image.getFilePath();
-        Path path = Paths.get(filePath);
-
-        Resource resource;
-        try {
-            resource = new UrlResource(path.toUri());
-        } catch (MalformedURLException e) {
-            throw new RuntimeException("File Path is invalid");
-        }
-
-        if(!resource.exists()) {
-            throw new ImageNotFoundException("Image not Found");
-        }
+        Resource resource = storageService.retrieve(filePath);
         return resource;
     }
 
@@ -154,13 +135,7 @@ public class ImageService {
 
 
         String filePath = image.getFilePath();
-        Path path = Paths.get(filePath);
-
-        try {
-            Files.deleteIfExists(path);
-        } catch (IOException e) {
-            throw new FileUploadException("Failed to delete the file from the disk");
-        }
+        storageService.delete(filePath);
         imageRepository.delete(image);
     }
 }
