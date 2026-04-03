@@ -1,6 +1,8 @@
 spring:
   application:
     name: image-processing-service
+  profiles:
+    active: local
 
   datasource:
     url: jdbc:mysql://localhost:3306/image_processing_db
@@ -24,3 +26,9 @@ jwt:
 
 server:
   port: 8081
+
+aws:
+  access-key: ${AWS_ACCESS_KEY}
+  secret-key: ${AWS_SECRET_KEY}
+  region: ap-south-1
+  bucket-name: ${AWS_BUCKET_NAME}

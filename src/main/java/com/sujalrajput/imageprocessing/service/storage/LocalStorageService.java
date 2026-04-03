@@ -2,6 +2,7 @@ package com.sujalrajput.imageprocessing.service.storage;
 
 import com.sujalrajput.imageprocessing.exception.FileUploadException;
 import com.sujalrajput.imageprocessing.exception.ImageNotFoundException;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
+@Profile("local")
 @Service
 public class LocalStorageService implements StorageService {
 
