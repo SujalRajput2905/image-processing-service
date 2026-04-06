@@ -6,6 +6,7 @@ import com.sujalrajput.imageprocessing.dto.ImageResponse;
 import com.sujalrajput.imageprocessing.dto.PagedImageResponse;
 import com.sujalrajput.imageprocessing.repository.UserRepository;
 import com.sujalrajput.imageprocessing.service.ImageService;
+import com.sujalrajput.imageprocessing.service.ImageTransformationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
@@ -14,6 +15,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/images")
@@ -24,6 +27,9 @@ public class ImageController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private ImageTransformationService imageTransformationService;
 
     @PostMapping("/upload")
     public ResponseEntity<?> uploadImage(@RequestParam MultipartFile file) {
@@ -61,7 +67,13 @@ public class ImageController {
     }
 
     @GetMapping("/file/{fileName}")
-    public ResponseEntity<Resource> getImage(@PathVariable String fileName) {
+    public ResponseEntity<byte[]> getImage(
+            @PathVariable String fileName,
+            @RequestParam(required = false) Integer width,
+            @RequestParam(required = false) Integer height,
+            @RequestParam(required = false) Double quality,
+            @RequestParam(required = false) Integer rotate)
+    {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Resource resource = imageService.getImageFile(fileName, auth.getName());
 
@@ -74,10 +86,17 @@ public class ImageController {
             mediaType = MediaType.APPLICATION_OCTET_STREAM;
         }
 
-        return ResponseEntity
-                .ok()
-                .contentType(mediaType)
-                .body(resource);
+        try {
+            byte[] imageBytes = imageTransformationService.transform(
+                    resource, width, height, quality, rotate);
+
+            return ResponseEntity
+                    .ok()
+                    .contentType(mediaType)
+                    .body(imageBytes);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to process image");
+        }
     }
 
     @DeleteMapping("/file/{fileName}")
